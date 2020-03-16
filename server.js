@@ -14,7 +14,7 @@ const server = express()
 const wss = new Server({ server });
 
 var GameManager = require('./GameManager')
-var gm = new GameManager(2);
+var gm = new GameManager(2, 2);
 
 wss.on('connection', (ws, req) => {
   ws.on('message', (message) => {
