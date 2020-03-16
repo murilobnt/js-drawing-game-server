@@ -20,5 +20,5 @@ wss.on('connection', (ws, req) => {
   ws.on('message', (message) => {
     gm.handleMessage(ws, JSON.parse(message))
   });
-  ws.on('close', () => console.log('Client disconnected'));
+  ws.on('close', () => gm.onDisconnect(ws));
 });

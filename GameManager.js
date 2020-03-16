@@ -1,12 +1,15 @@
 class GameManager {
   constructor(max_players){
     this.max_players = max_players;
+    this.initialState();
+  }
+
+  initialState(){
     this.players = [];
     this.player_names = [];
     this.dict_player_names = {}; // players -> name
     this.voters = [];
     this.drawings = {}; // subjects -> [name, img]
-    this.state = 0;
     this.votes = {};
     this.voted = 0;
   }
@@ -37,6 +40,28 @@ class GameManager {
     }
   }
 
+  resetGame(reason){
+    this.players.forEach(
+      (player) => {
+        player.send(JSON.stringify({about: 'abort_game', reason: reason}));
+      }
+    );
+    this.voters.forEach(
+      (voter) => {
+        voter.send(JSON.stringify({about: 'abort_game', reason: reason}));
+      }
+    );
+    this.initialState();
+  }
+
+  onDisconnect(user){
+    if(this.voters.indexOf(user) > -1){
+      this.voters.splice(this.voters.indexOf(user), 1);
+    } else if(this.players.indexOf(user) > -1) {
+      this.resetGame("A player disconnected");
+    }
+  }
+
   handleMessage(user, message_json){
     switch(message_json.action){
       case 'join_players':
@@ -60,11 +85,16 @@ class GameManager {
         }
       break;
       case 'ready_for_votes':
-        this.voters.forEach(
-          (voter) => {
-            voter.send(JSON.stringify({about: 'votes', content: this.drawings, player_names: this.player_names}));
-          }
-        );
+        if(this.voters.length == 0) {
+          user.send(JSON.stringify({about: 'abort_game', reason: 'No voters'}));
+          this.initialState();
+        } else {
+          this.voters.forEach(
+            (voter) => {
+              voter.send(JSON.stringify({about: 'votes', content: this.drawings, player_names: this.player_names}));
+            }
+          );
+        }
       break;
       case 'end_votes':
         this.player_names.forEach((player) => {
@@ -75,13 +105,16 @@ class GameManager {
           this.players.forEach(
             (player) => {
               player.send(JSON.stringify({about: 'end_game', result: this.votes}));
+              player.close();
             }
           );
           this.voters.forEach(
             (voter) => {
               voter.send(JSON.stringify({about: 'end_game', result: this.votes}));
+              voter.close();
             }
           );
+          this.initialState();
         }
     }
   }
