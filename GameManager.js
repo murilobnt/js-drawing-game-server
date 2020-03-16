@@ -5,6 +5,7 @@ class GameManager {
   }
 
   initialState(){
+    this.started = false;
     this.players = [];
     this.player_names = [];
     this.dict_player_names = {}; // players -> name
@@ -15,6 +16,7 @@ class GameManager {
   }
 
   startGame(){
+    this.started = true;
     this.players.forEach(
       (value) => {
         this.drawings[value] = [];
@@ -36,7 +38,7 @@ class GameManager {
         this.startGame();
       }
     } else {
-      user.send(JSON.stringify({about: 'op_return', success: false, reason: 'ERROR_GAME_IN_PROGRESS'}))
+      user.send(JSON.stringify({about: 'abort_game', reason: 'Game in progress'}))
     }
   }
 
@@ -58,7 +60,11 @@ class GameManager {
     if(this.voters.indexOf(user) > -1){
       this.voters.splice(this.voters.indexOf(user), 1);
     } else if(this.players.indexOf(user) > -1) {
-      this.resetGame("A player disconnected");
+      if(this.started){
+        this.resetGame("A player disconnected");
+      } else {
+        this.players.splice(this.players.indexOf(user), 1);
+      }
     }
   }
 
