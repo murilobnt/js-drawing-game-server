@@ -28,7 +28,7 @@ class GameManager {
     this.initialState();
   }
 
-  initialState(){
+  initialState() {
     this.started = false;
     this.players = [];
     this.player_names = [];
@@ -38,6 +38,7 @@ class GameManager {
     this.votes = {};
     this.voted = 0;
     this.subjects = [];
+    this.players_subjects = [];
   }
 
 // from: https://stackoverflow.com/questions/19269545/how-to-get-n-no-elements-randomly-from-an-array
@@ -57,7 +58,8 @@ class GameManager {
 
   startGame(){
     this.started = true;
-    this.subjects = this.getRandom(this.possible_subjects, this.rounds);
+    this.subjects = this.getRandom(this.possible_subjects.concat(this.players_subjects), this.rounds);
+    console.log(this.subjects)
     this.players.forEach(
       (value) => {
         this.drawings[value] = [];
@@ -97,7 +99,7 @@ class GameManager {
     this.initialState();
   }
 
-  onDisconnect(user){
+  onDisconnect(user) {
     if(this.voters.indexOf(user) > -1){
       this.voters.splice(this.voters.indexOf(user), 1);
     } else if(this.players.indexOf(user) > -1) {
@@ -109,8 +111,15 @@ class GameManager {
     }
   }
 
+  newSubjects(subjects) {
+    this.players_subjects = this.players_subjects.concat(subjects)
+  }
+
   handleMessage(user, message_json){
     switch(message_json.action){
+      case 'new_subjects':
+        this.newSubjects(message_json.subjects)
+      break;
       case 'join_players':
         this.joinPlayers(user, message_json.name, message_json.cli_hash)
       break;
